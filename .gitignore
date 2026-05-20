@@ -1,0 +1,69 @@
+# ignore data & checkpoints
+data/
+checkpoints/
+checkpoints*/
+trash/
+federatedscope/trash/
+final_data_splits/
+runs_logs/
+
+# experiment outputs / large artifacts
+exp/
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.tar.gz
+*.tar
+*.zip
+*.gz
+*.pkl
+
+# logs
+*.log
+
+# VS Code Local History extension (auto-generated)
+.history/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
