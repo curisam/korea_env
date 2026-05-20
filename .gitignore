@@ -1,11 +1,11 @@
-# ignore data & checkpoints
-data/
-checkpoints/
-checkpoints*/
-trash/
+# ignore data & checkpoints (root only — NOT federatedscope/core/data etc.)
+/data/
+/checkpoints/
+/checkpoints_*/
+/trash/
 federatedscope/trash/
-final_data_splits/
-runs_logs/
+/final_data_splits/
+/runs_logs/
 
 # experiment outputs / large artifacts
 exp/

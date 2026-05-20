@@ -30,7 +30,79 @@ FedBis/FedBiscuit is a federated learning framework that enables reinforcement l
 
 ## Installation
 
-Before you run the code, set up your environment and install FS-LLM (which is integrated into this repository). Follow these steps:
+This branch (`korea_env_main`) ships with a one-shot setup script that builds the exact environment used to train `gfl_plain.sh` and the other Korea-server experiments.
+
+### Prerequisites on the target server
+- Linux with NVIDIA driver **≥ 525.60.13** (CUDA 12.1 wheel-compatible — `nvidia-smi` shows any CUDA ≥ 12.1).
+- Anaconda or Miniconda installed (`conda --version` works).
+- At least 4 NVIDIA GPUs with ≥ 24 GB VRAM each for the default `gfl_plain.sh` (uses GPU 0–3, mixed-precision bf16).
+
+### One-command setup
+```bash
+git clone https://github.com/curisam/korea_env.git
+cd korea_env
+bash setup.sh fedbiscuit          # creates conda env "fedbiscuit"
+conda activate fedbiscuit
+```
+
+`setup.sh` performs:
+1. `conda create -n fedbiscuit python=3.9 pip`
+2. `pip install -r requirements.txt` — installs PyTorch `2.1.0+cu121` (CUDA 12.1 wheel, includes CUDA runtime — no system CUDA toolkit needed) + the full HuggingFace stack pinned to the exact versions used in the original experiments.
+3. `pip install -e .` — installs FederatedScope in editable mode.
+
+At the end it prints a self-check (torch version, CUDA availability, transformers/accelerate/peft/datasets versions).
+
+### What gets installed (key pins)
+| Package | Version | Notes |
+|---|---|---|
+| Python | 3.9 | required by FederatedScope 0.3.0 |
+| torch / torchvision / torchaudio | 2.1.0+cu121 | CUDA 12.1 wheel from `download.pytorch.org` |
+| transformers | 4.49.0 | Qwen2 support |
+| accelerate | 1.10.1 | multi-GPU launch |
+| peft | 0.17.1 | LoRA adapters |
+| datasets | 4.4.1 | HuggingFace datasets |
+| objgraph | 3.6.2 | required by `federatedscope.core.trainers` |
+| protobuf | 3.19.4 | pinned for grpc compat |
+
+The full list is in [`requirements.txt`](requirements.txt). All numeric pins match the verified working environment — do not bump them unless you also retest.
+
+### External assets you must place yourself
+The git repo intentionally excludes large binaries. Before running `gfl_plain.sh`, populate these paths in the project root (copy or symlink from the original server):
+
+| Path | Contents | Used by |
+|---|---|---|
+| `data/` | `reddit-tldr-comparison/` HuggingFace cache | data loader (TLDR choice task) |
+| `checkpoints_u10_warmup_1.0/` | `final_tldr_choice_qwen_fedbiscuit_u10_warmup_1.0_round_200.ckpt` | `load_from_local_pretrained_model_path` in each `*_plain.yaml` |
+| `~/.cache/huggingface/hub/` | `models--Qwen--Qwen2-0.5B` | base LLM (HF_HUB_OFFLINE=1 in the script — must be cached locally) |
+
+```bash
+# Example (rsync from the original server)
+rsync -aP user@origin:/path/to/FedBiscuit_ultra/data/                    ./data/
+rsync -aP user@origin:/path/to/FedBiscuit_ultra/checkpoints_u10_warmup_1.0/ ./checkpoints_u10_warmup_1.0/
+rsync -aP user@origin:~/.cache/huggingface/hub/models--Qwen--Qwen2-0.5B/  ~/.cache/huggingface/hub/models--Qwen--Qwen2-0.5B/
+```
+
+### Running `gfl_plain.sh`
+```bash
+conda activate fedbiscuit
+bash gfl_plain.sh
+```
+The script pins `CUDA_VISIBLE_DEVICES=0,1,2,3` and launches four configs sequentially (`u2 → u3 → u4 → u5`) via `accelerate launch --config_file fedbiscuit_script/accelerator_config_bf16_ver1.yaml`. Logs land in `runs_logs/`. Edit the `GPU_LIST` variable inside `gfl_plain.sh` if your server has a different GPU layout.
+
+### Verifying the install
+A short sanity run:
+```bash
+conda activate fedbiscuit
+python -c "import torch, transformers, accelerate, peft, datasets, objgraph; \
+print(torch.__version__, torch.cuda.is_available(), transformers.__version__)"
+```
+This was confirmed working on `srv06` (RTX A5000 × 4, driver 580.126.09, CUDA 13.0) — the first round of `tldr_choice_qwen_fedbiscuit_u2_1.0_plain.yaml` trains and evaluates end-to-end across all 4 GPUs.
+
+---
+
+## Legacy install (original FS-LLM upstream, kept for reference)
+
+The instructions below are from the upstream FS-LLM project. They install an older PyTorch/CUDA combo and are **not** what the Korea-server experiments use; prefer `setup.sh` above.
 
 1. **Create a Conda Environment:**
    ```bash
@@ -47,8 +119,6 @@ Before you run the code, set up your environment and install FS-LLM (which is in
    ```bash
    pip install -e .[llm]
    ```
-
-You are now ready to use FS-LLM.
 
 ---
 
